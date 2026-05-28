@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ProjFlow</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="layout">
+
+  <!-- ══ SIDEBAR ══════════════════════════════ -->
+  <aside>
+    <div class="brand">
+      <div class="brand-name"><span>Hydra</span></div>
+      <div class="brand-empresa">Engenharia</div>
+      <div class="brand-sub">Controle de projetos</div>
+    </div>
+
+    <div class="nav-label">Menu</div>
+    <nav>
+      <div class="nav-item active" onclick="goTo('cadastro', this)">
+        <span class="ni-icon">📋</span> Cadastro
+      </div>
+      <div class="nav-item" onclick="goTo('registro', this)">
+        <span class="ni-icon">📌</span> Registro
+      </div>
+      <div class="nav-sep"></div>
+      <div class="nav-label">Relatórios</div>
+      <div class="nav-item" onclick="goTo('relatorio', this)">
+        <span class="ni-icon">📊</span> Visualizações
+      </div>
+    </nav>
+
+    <div style="margin: 20px 12px 0;">
+      <div class="stats-mini">
+        <div class="sm-label">Total cadastros</div>
+        <div class="sm-val" id="side-total">0</div>
+        <div class="sm-sub">projetos registrados</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ══ MAIN ══════════════════════════════════ -->
+  <main>
+
+    <!-- ── CADASTRO ───────────────────────────── -->
+    <div class="page active" id="page-cadastro">
+      <div class="page-head">
+        <h1>Novo <em>Cadastro</em></h1>
+        <p>Registre um novo projeto com as informações da empresa e responsáveis.</p>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Informações do projeto</div>
+
+        <div class="field-grid">
+
+          <div class="field field-full">
+            <label>Razão Social</label>
+            <input id="c-razao" type="text" placeholder="Ex: COCA COLA INDÚSTRIA DE BEBIDAS">
+          </div>
+
+          <div class="field field-full">
+            <label>Equipe responsável</label>
+            <div class="equipe-chips">
+              <div class="eq-chip-btn" onclick="selEquipe('Equipe Fire', 'fire', this)">
+                <span class="eci">🔥</span>
+                <span class="ecn">Equipe Fire</span>
+              </div>
+              <div class="eq-chip-btn" onclick="selEquipe('Equipe Bilingada', 'bili', this)">
+                <span class="eci">🌐</span>
+                <span class="ecn">Equipe Bilingada</span>
+              </div>
+              <div class="eq-chip-btn" onclick="selEquipe('Equipe Supapo', 'supa', this)">
+                <span class="eci">⚡</span>
+                <span class="ecn">Equipe Supapo</span>
+              </div>
+              <div class="eq-chip-btn" onclick="selEquipe('Equipe de Arquitetura', 'arqui', this)">
+                <span class="eci">📐</span>
+                <span class="ecn">Eq. Arquitetura</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Projetista</label>
+            <input id="c-projetista" type="text" placeholder="Nome do projetista">
+          </div>
+
+          <div class="field">
+            <label>Parceiro (empresa)</label>
+            <input id="c-parceiro" type="text" placeholder="Nome do parceiro externo">
+          </div>
+
+          <div class="field">
+            <label>Data de cadastro (automática)</label>
+            <div class="auto-date">
+              <div class="pulse"></div>
+              <span id="c-date-display">—</span>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Código do projeto (gerado automaticamente)</label>
+            <div class="codigo-gerado">
+              <div>
+                <div class="codigo-valor" id="c-codigo-preview">——————</div>
+                <div class="codigo-hint">ano + sequencial de 4 dígitos</div>
+              </div>
+              <button class="btn-copy" id="btn-copy-preview" onclick="copiarCodigo()">Copiar</button>
+            </div>
+          </div>
+
+        </div><!-- /.field-grid -->
+
+        <div class="form-actions">
+          <button class="btn btn-ghost" onclick="limparCadastro()">Limpar</button>
+          <button class="btn btn-primary" onclick="salvarCadastro()">Salvar cadastro</button>
+        </div>
+      </div><!-- /.card -->
+    </div><!-- /#page-cadastro -->
+
+
+    <!-- ── REGISTRO ───────────────────────────── -->
+    <div class="page" id="page-registro">
+      <div class="page-head">
+        <h1>Novo <em>Registro</em></h1>
+        <p>Busque um cadastro existente e adicione o protocolo e a data de entrada.</p>
+      </div>
+
+      <div class="card" style="margin-bottom: 20px;">
+        <div class="card-title">Buscar cadastro</div>
+        <div class="search-box">
+          <div class="field" style="flex: 1; margin: 0;">
+            <input id="r-search" type="text"
+              placeholder="Buscar por razão social, projetista ou parceiro..."
+              oninput="buscarCadastro()">
+          </div>
+          <div class="field" style="margin: 0; min-width: 160px;">
+            <select id="r-filter-eq" onchange="buscarCadastro()">
+              <option value="">Todas as equipes</option>
+              <option value="Equipe Fire">🔥 Equipe Fire</option>
+              <option value="Equipe Bilingada">🌐 Equipe Bilingada</option>
+              <option value="Equipe Supapo">⚡ Equipe Supapo</option>
+              <option value="Equipe de Arquitetura">📐 Equipe de Arquitetura</option>
+            </select>
+          </div>
+        </div>
+        <div class="result-list" id="r-results"></div>
+      </div>
+
+
+    </div><!-- /#page-registro -->
+
+
+    <!-- ── RELATÓRIO ──────────────────────────── -->
+    <div class="page" id="page-relatorio">
+      <div class="page-head">
+        <h1>Relatório <em>Geral</em></h1>
+        <p>Visão consolidada de todos os projetos cadastrados e protocolados.</p>
+      </div>
+
+      <!-- Filtros -->
+      <div class="rel-filters">
+        <div class="field">
+          <label>Período — de</label>
+          <input type="date" id="f-de" onchange="renderRelatorio()">
+        </div>
+        <div class="field">
+          <label>Até</label>
+          <input type="date" id="f-ate" onchange="renderRelatorio()">
+        </div>
+        <div class="field">
+          <label>Equipe</label>
+          <select id="f-eq" onchange="renderRelatorio()">
+            <option value="">Todas</option>
+            <option value="Equipe Fire">🔥 Fire</option>
+            <option value="Equipe Bilingada">🌐 Bilingada</option>
+            <option value="Equipe Supapo">⚡ Supapo</option>
+            <option value="Equipe de Arquitetura">📐 Arquitetura</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Projetista</label>
+          <select id="f-proj" onchange="renderRelatorio()">
+            <option value="">Todos</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Parceiro</label>
+          <select id="f-parc" onchange="renderRelatorio()">
+            <option value="">Todos</option>
+          </select>
+        </div>
+        <button class="btn btn-ghost" onclick="limparFiltros()" style="margin-top: 22px;">
+          Limpar filtros
+        </button>
+      </div>
+
+      <!-- KPIs -->
+      <div class="kpi-grid">
+        <div class="kpi-card ka">
+          <div class="kpi-val" id="k-total">0</div>
+          <div class="kpi-lbl">Total cadastros</div>
+        </div>
+        <div class="kpi-card kg">
+          <div class="kpi-val" id="k-proto">0</div>
+          <div class="kpi-lbl">Protocolados</div>
+        </div>
+        <div class="kpi-card kf">
+          <div class="kpi-val" id="k-fire">0</div>
+          <div class="kpi-lbl">Equipe Fire</div>
+        </div>
+        <div class="kpi-card kb">
+          <div class="kpi-val" id="k-bili">0</div>
+          <div class="kpi-lbl">Eq. Bilingada</div>
+        </div>
+        <div class="kpi-card ks">
+          <div class="kpi-val" id="k-supa">0</div>
+          <div class="kpi-lbl">Eq. Supapo</div>
+        </div>
+        <div class="kpi-card karq">
+          <div class="kpi-val" id="k-arqui">0</div>
+          <div class="kpi-lbl">Eq. Arquitetura</div>
+        </div>
+      </div>
+
+      <!-- Rankings em Acordeão -->
+      <div class="accordion-wrap" style="margin-bottom: 20px;">
+        <div class="accordion-item">
+          <div class="accordion-header" onclick="toggleAccordion('acc-proj', this)">
+            <span>👤 Por Projetista</span>
+            <span class="acc-arrow">›</span>
+          </div>
+          <div class="accordion-body" id="acc-proj">
+            <div class="rank-list" id="rank-proj"></div>
+          </div>
+        </div>
+        <div class="accordion-item">
+          <div class="accordion-header" onclick="toggleAccordion('acc-parc', this)">
+            <span>🤝 Por Parceiro</span>
+            <span class="acc-arrow">›</span>
+          </div>
+          <div class="accordion-body" id="acc-parc">
+            <div class="rank-list" id="rank-parc"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tabela -->
+      <div class="card">
+        <div class="card-title">Todos os registros</div>
+        <div class="tbl-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Código</th>
+                <th>Razão Social</th>
+                <th>Projetista</th>
+                <th>Equipe</th>
+                <th>Parceiro</th>
+                <th>Cadastrado em</th>
+                <th>Protocolo</th>
+                <th>Protocolado em</th>
+              </tr>
+            </thead>
+            <tbody id="rel-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div><!-- /#page-relatorio -->
+
+  </main>
+</div><!-- /.layout -->
+
+
+<!-- ══ MODAL DE PROTOCOLO ════════════════════ -->
+<div class="proto-modal" id="proto-modal">
+  <div class="proto-modal-box">
+    <div class="proto-modal-header">
+      <div>
+        <div class="proto-modal-label">Registrar protocolo</div>
+        <div class="proto-modal-name" id="proto-modal-name">—</div>
+        <div class="proto-modal-code" id="proto-modal-code">—</div>
+      </div>
+      <button class="proto-modal-close" onclick="cancelarRegistro()">✕</button>
+    </div>
+
+    <div class="proto-modal-body">
+      <div class="field">
+        <label>Número do protocolo</label>
+        <input id="r-protocolo" type="text" placeholder="Ex: 2320050225766"
+               oninput="this.value = this.value.replace(/\D/g,'')"
+               onkeydown="if(event.key==='Enter') salvarRegistro()">
+      </div>
+      <div class="field" style="margin-top: 14px;">
+        <label>Data de entrada (automática)</label>
+        <div class="auto-date">
+          <div class="pulse"></div>
+          <span id="r-date-display">—</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="proto-modal-footer">
+      <button class="btn btn-ghost" onclick="cancelarRegistro()">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarRegistro()">📌 Confirmar registro</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL DE SUCESSO ══════════════════════ -->
+<div class="success-modal" id="success-modal">
+  <div class="success-box">
+    <div class="success-icon">✅</div>
+    <div class="success-label">Código do projeto</div>
+    <div class="success-code" id="modal-code">—</div>
+    <div class="success-name" id="modal-name">—</div>
+    <div class="success-actions">
+      <button class="btn btn-primary" onclick="copiarCodigoModal()">📋 Copiar código</button>
+      <button class="btn btn-ghost" onclick="fecharModal()">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ TOAST ══════════════════════════════════ -->
+<div class="toast" id="toast"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
