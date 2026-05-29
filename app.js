@@ -8,7 +8,7 @@
 // Aponte para o caminho onde o api.php foi enviado no UOL Host.
 // Se o arquivo estiver na raiz do site: '/api.php'
 // Se estiver numa pasta /api/: '/api/api.php'
-const API_URL = 'https://hydraengenharia.com/sistema/api/api.php?sheet=Cadastros';
+const API_URL = 'https://hydraengenharia.com/sistema/api/api.php';
 
 // ── Mapa de equipes ───────────────────────────
 const EQ = {
@@ -120,7 +120,7 @@ function toast(msg, isWarn = false) {
  * @param {string} sheet  Nome da aba ('Cadastros' | 'Registros')
  */
 async function fetchSheet(sheet) {
-  const res  = await fetch(`${API_URL}?sheet=${sheet}`);
+  const res = await fetch(`${API_URL}?sheet=${sheet}`, { credentials: 'include' });
   const data = await res.json();
   return data.map(row => ({
     ...row,
@@ -139,6 +139,7 @@ async function postRow(sheet, rowArray) {
     method:  'POST',
     headers: { 'Content-Type': 'application/json' },
     body:    JSON.stringify({ sheet, row: rowArray }),
+     credentials: 'include'
   });
   if (!res.ok) throw new Error('Erro na gravação: ' + res.status);
 }
