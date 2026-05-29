@@ -5,8 +5,10 @@
 'use strict';
 
 // ── Configuração ──────────────────────────────
-const API_URL =
-  'https://script.google.com/macros/s/AKfycbxDii4YkRky-WIrwDvbHGZ2cKYWI2Asdw65wPcwnHTTfv8RJ2NFQv7FhnPGeHwlq_Fv/exec';
+// Aponte para o caminho onde o api.php foi enviado no UOL Host.
+// Se o arquivo estiver na raiz do site: '/api.php'
+// Se estiver numa pasta /api/: '/api/api.php'
+const API_URL = '/api/api.php';
 
 // ── Mapa de equipes ───────────────────────────
 const EQ = {
@@ -16,12 +18,49 @@ const EQ = {
   'Equipe de Arquitetura': { key: 'arqui', icon: '📐', tag: 'tag-arqui', color: 'var(--arqui)' },
 };
 
+// ── Lista de parceiros ────────────────────────
+const PARCEIROS = [
+  'PROJETOS ROSSANO','PROJETOS GALVÃO','PROJETOS ROCHA','PROJETOS CALIXTO',
+  'PROJETOS FHILIPE EXBRAS','PROJETOS HYGGOR','PROJETOS JORDÃO','PROJETOS BARTOLOMEU',
+  'PROJETOS ANTONIO EXBRAS','PROJETOS VALBERTO EXTIMBAS','PROJETOS CAIO MUNIZ (PATTEO OLINDA)',
+  'PROJETOS EDUARDO','PROJETOS GILVAN LEITE','PROJETOS MANOEL EXTINTEC',
+  'PROJETOS SERVINDUSTRIA','PROJETOS EXATA','PROJETOS FACILITA',
+  'PROJETOS EXTIMAC - ISAVAN','PROJETOS BODINHO','PROJETOS SW SERVIÇOS',
+  'PROJETOS CAP. SOUZA','PROJETOS MOTOCA','PROJETOS JOÃO CARLOS','PROJETOS ASSIS',
+  'PROJETOS AGRESTE EXTINTORES','PROJETOS EDUARDO','PROJETOS LX ENGENHARIA',
+  'PROJETOS SGT. LUCENA','PROJETOS E J SERVIÇOS','PROJETOS TEN CEL. FLÁVIO',
+  'PROJETOS DIMAS XAVIER','PROJETOS NEY EXTINTORES','PROJETOS GRUPO VIA SUL',
+  'PROJETOS SIMONE-CARLOS','PROJETOS PEDRO AUGUSTO','PROJETOS CHARLES',
+  'PROJETOS SICREDI','PROJETOS WILLIAM MERENCIO','PROJETOS XAVIER',
+  'PROJETOS UNICA (ROSILENE)','PROJETOS EXTRA','PROJETOS FABIO MIRANDA',
+  'PROJETOS ROBSON CEZAR','PROJETOS MAJOR CRUZ','PROJETOS JEFFERSON CBMPE',
+  'PROJETOS MULTITÉCNICA ENGENHARIA','PROJETOS DAMASCENO','PROJETOS XAVIER BOMBEIRO',
+  'PROJETOS RICARDO CARUARU','PROJETOS RILDO (DESPACHANTE)','PROJETOS JORGE ENGENHEIRO',
+  'PROJETOS JAIRO','PROJETOS SGT VINICIUS','PROJETOS BRK','PROJETOS PAULO DAMASCO',
+  'PROJETOS LOJAS AMERICANAS','PROJETOS ADELMAR','PROJETOS AWM','PROJETOS ELAINE',
+  'PROJETOS MOISÉS','PROJETOS COANA','PROJETOS RICARDO AMORIM (AN INSTALAÇÕES)',
+  'PROJETOS MEYGSON','PROJETOS CM ENGENHARIA','PROJETOS MB PROTEGE',
+  'PROJETOS DAIANA SURUBIM (PREVENCENDIO)','PROJETOS DANIELLE - ARNALDO - DEPÓSITO GÁS',
+  'PROJETOS HAUT','PROJETOS CLEBSON','PROJETOS MATHEUS SUPERMERCADOS',
+  'PROJETOS AURILEIDE GALDINO','PROJETOS LOURENÇO FILHO','PROJETOS MRV',
+  'PROJETOS MARCONE BOMBEIRO','PROJETOS DIRECIONAL','PROJETOS DUE INCORPORADORA',
+  'PROJETOS SELFIT ACADEMIAS','PROJETOS QUEIROZ GALVÃO',
+  'PROJETOS PRIORI & BORA EMPREENDIMENTOS','PROJETOS GENIVAL','PROJETOS ERÓ EXTINTORES',
+  'PROJETOS SESI & SENAI','PROJETOS FRANCISCO MAIA','PROJETOS LUIZ HENRIQUE (HRM SOLUÇÕES)',
+  'PROJETOS CP CONSTRUÇÃO','PROJETOS NOVO ATACAREJO',
+  'PROJETOS PLANUM EMPREENDIMENTOS (LEVEL ENGENHARIA)','PROJETOS HASA EMPREENDIMENTOS',
+  'PROJETOS FGH','PROJETOS PEDRO AMPM','PROJETOS ARCOMIX','PROJETOS GABRIEL BARCELAR',
+  'PROJETOS GLAUCUS (HSM)',
+];
+
 // ── Estado da aplicação ───────────────────────
 let _cacheCad     = null;   // cache da planilha Cadastros
 let _cacheReg     = null;   // cache da planilha Registros
 let _codigoAtual  = null;   // código gerado para o cadastro em edição
 let selEquipeVal  = null;   // equipe selecionada nos chips
 let selectedCadId = null;   // id do cadastro selecionado no Registro
+let tipoProjeto   = 'avulso'; // 'avulso' | 'parceiro'
+let parceiroSel   = '';       // nome do parceiro selecionado
 
 
 // ════════════════════════════════════════════════
@@ -35,6 +74,11 @@ window.addEventListener('DOMContentLoaded', async () => {
   // Fecha o modal de protocolo ao clicar no backdrop
   document.getElementById('proto-modal').addEventListener('click', function (e) {
     if (e.target === this) cancelarRegistro();
+  });
+
+  // Fecha o modal de parceiros ao clicar no backdrop
+  document.getElementById('parceiro-modal').addEventListener('click', function (e) {
+    if (e.target === this) fecharModalParceiros();
   });
 
   showLoader(true);
@@ -91,12 +135,12 @@ async function fetchSheet(sheet) {
  * @param {Array}   rowArray  Valores na ordem das colunas
  */
 async function postRow(sheet, rowArray) {
-  await fetch(API_URL, {
+  const res = await fetch(API_URL, {
     method:  'POST',
-    mode:    'no-cors',
     headers: { 'Content-Type': 'application/json' },
     body:    JSON.stringify({ sheet, row: rowArray }),
   });
+  if (!res.ok) throw new Error('Erro na gravação: ' + res.status);
 }
 
 /** Retorna os cadastros (com cache). */
@@ -237,27 +281,104 @@ function selEquipe(nome, key, el) {
 
 
 // ════════════════════════════════════════════════
+// TIPO DE PROJETO (Avulso / Com Parceiro)
+// ════════════════════════════════════════════════
+
+/** Alterna entre avulso e parceiro sem abrir modal. */
+function selecionarTipo(tipo) {
+  tipoProjeto = tipo;
+
+  const btnAvulso   = document.getElementById('btn-tipo-avulso');
+  const btnParceiro = document.getElementById('btn-tipo-parceiro');
+
+  btnAvulso.classList.toggle('active',   tipo === 'avulso');
+  btnParceiro.classList.toggle('active', tipo === 'parceiro');
+
+  // Se voltou para avulso, limpa o parceiro
+  if (tipo === 'avulso') limparParceiro();
+}
+
+/** Abre o modal de parceiros e renderiza a lista completa. */
+function abrirModalParceiros() {
+  selecionarTipo('parceiro');
+  document.getElementById('parceiro-search').value = '';
+  renderListaParceiros(PARCEIROS);
+  document.getElementById('parceiro-modal').classList.add('show');
+  setTimeout(() => document.getElementById('parceiro-search').focus(), 150);
+}
+
+function fecharModalParceiros() {
+  document.getElementById('parceiro-modal').classList.remove('show');
+  // Se fechou sem escolher e não tinha parceiro antes, volta para avulso
+  if (!parceiroSel) selecionarTipo('avulso');
+}
+
+/** Filtra a lista de parceiros pelo texto digitado. */
+function filtrarParceiros(q) {
+  const lista = q.trim()
+    ? PARCEIROS.filter(p => p.toLowerCase().includes(q.toLowerCase()))
+    : PARCEIROS;
+  renderListaParceiros(lista);
+}
+
+/** Renderiza os itens de parceiro no modal. */
+function renderListaParceiros(lista) {
+  const el = document.getElementById('parceiro-lista');
+  if (!lista.length) {
+    el.innerHTML = '<div class="parceiro-item-empty">Nenhum parceiro encontrado.</div>';
+    return;
+  }
+  el.innerHTML = lista.map((nome, i) => `
+    <div class="parceiro-item" onclick="selecionarParceiro('${nome.replace(/'/g, "\\'")}')">
+      <span class="parceiro-num">${PARCEIROS.indexOf(nome) + 1}</span>
+      <span class="parceiro-nome">${nome}</span>
+    </div>`).join('');
+}
+
+/** Confirma a seleção de um parceiro. */
+function selecionarParceiro(nome) {
+  parceiroSel = nome;
+  document.getElementById('parceiro-sel-nome').textContent = nome;
+  document.getElementById('parceiro-selecionado').style.display = 'flex';
+  document.getElementById('parceiro-modal').classList.remove('show');
+}
+
+/** Remove o parceiro selecionado e volta para avulso. */
+function limparParceiro() {
+  parceiroSel = '';
+  document.getElementById('parceiro-selecionado').style.display = 'none';
+  document.getElementById('parceiro-sel-nome').textContent = '';
+}
+
+
+// ════════════════════════════════════════════════
 // CADASTRO
 // ════════════════════════════════════════════════
 
 async function limparCadastro() {
-  ['c-razao', 'c-projetista', 'c-parceiro'].forEach(
+  ['c-razao', 'c-projetista'].forEach(
     id => (document.getElementById(id).value = '')
   );
   selEquipeVal = null;
+  tipoProjeto  = 'avulso';
   document.querySelectorAll('.eq-chip-btn').forEach(b => (b.className = 'eq-chip-btn'));
+  document.getElementById('btn-tipo-avulso').classList.add('active');
+  document.getElementById('btn-tipo-parceiro').classList.remove('active');
+  limparParceiro();
   await prepararProximoCodigo();
 }
 
 async function salvarCadastro() {
   const razao      = document.getElementById('c-razao').value.trim();
   const projetista = document.getElementById('c-projetista').value.trim();
-  const parceiro   = document.getElementById('c-parceiro').value.trim();
+  const parceiro   = tipoProjeto === 'parceiro' ? parceiroSel : '';
 
   // Validações
   if (!razao)        return toast('⚠ Informe a Razão Social.', true);
   if (!selEquipeVal) return toast('⚠ Selecione a equipe responsável.', true);
   if (!projetista)   return toast('⚠ Informe o projetista.', true);
+  if (tipoProjeto === 'parceiro' && !parceiro)
+    return toast('⚠ Selecione um parceiro ou troque para Avulso.', true);
 
   showLoader(true);
   try {
@@ -266,10 +387,10 @@ async function salvarCadastro() {
     const dataHoje = nowISO();
     const anoAtual = new Date().getFullYear();
 
-    // Colunas Sheets: id | codigo | razao | projetista | equipe | parceiro | dataCad | anoGerado
+    // Colunas: id | codigo | razao | projetista | equipe | parceiro | dataCad | anoGerado
     await postRow('Cadastros', [
       idUnico, codigo, razao, projetista, selEquipeVal,
-      parceiro || '', dataHoje, anoAtual,
+      parceiro, dataHoje, anoAtual,
     ]);
 
     // Atualiza cache local imediatamente (evita nova requisição)

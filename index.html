@@ -92,8 +92,26 @@
           </div>
 
           <div class="field">
-            <label>Parceiro (empresa)</label>
-            <input id="c-parceiro" type="text" placeholder="Nome do parceiro externo">
+            <label>Tipo de projeto</label>
+            <div class="tipo-projeto-btns">
+              <button class="tipo-btn tipo-btn-avulso active" id="btn-tipo-avulso"
+                      onclick="selecionarTipo('avulso')">
+                <span class="tipo-icon">📄</span>
+                <span class="tipo-label">Avulso</span>
+                <span class="tipo-desc">Sem parceiro</span>
+              </button>
+              <button class="tipo-btn tipo-btn-parceiro" id="btn-tipo-parceiro"
+                      onclick="abrirModalParceiros()">
+                <span class="tipo-icon">🤝</span>
+                <span class="tipo-label">Com Parceiro</span>
+                <span class="tipo-desc">Selecionar da lista</span>
+              </button>
+            </div>
+            <!-- Nome do parceiro selecionado -->
+            <div class="parceiro-selecionado" id="parceiro-selecionado" style="display:none;">
+              <span class="parceiro-sel-nome" id="parceiro-sel-nome"></span>
+              <button class="parceiro-sel-clear" onclick="limparParceiro()" title="Remover parceiro">✕</button>
+            </div>
           </div>
 
           <div class="field">
@@ -310,6 +328,24 @@
       <button class="btn btn-ghost" onclick="cancelarRegistro()">Cancelar</button>
       <button class="btn btn-primary" onclick="salvarRegistro()">📌 Confirmar registro</button>
     </div>
+  </div>
+</div>
+
+<!-- ══ MODAL DE PARCEIROS ════════════════════ -->
+<div class="parceiro-modal" id="parceiro-modal">
+  <div class="parceiro-modal-box">
+    <div class="parceiro-modal-header">
+      <div>
+        <div class="proto-modal-label">Selecionar parceiro</div>
+        <div class="proto-modal-name">Lista de parceiros</div>
+      </div>
+      <button class="proto-modal-close" onclick="fecharModalParceiros()">✕</button>
+    </div>
+    <div class="parceiro-modal-search">
+      <input id="parceiro-search" type="text" placeholder="Buscar parceiro..."
+             oninput="filtrarParceiros(this.value)">
+    </div>
+    <div class="parceiro-modal-list" id="parceiro-lista"></div>
   </div>
 </div>
 
