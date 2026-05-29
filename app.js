@@ -8,7 +8,7 @@
 // Aponte para o caminho onde o api.php foi enviado no UOL Host.
 // Se o arquivo estiver na raiz do site: '/api.php'
 // Se estiver numa pasta /api/: '/api/api.php'
-const API_URL = '/api/api.php';
+const API_URL = 'https://hydraengenharia.com/sistema/api/api.php';
 
 // ── Mapa de equipes ───────────────────────────
 const EQ = {
