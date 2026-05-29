@@ -146,13 +146,13 @@ async function postRow(sheet, rowArray) {
 
 /** Retorna os cadastros (com cache). */
 async function loadCad(force = false) {
-  if (!_cacheCad || force) _cacheCad = await fetchSheet('Cadastros');
+  if (!_cacheCad || force) _cacheCad = await fetchSheet('cadastros');
   return _cacheCad;
 }
 
 /** Retorna os registros de protocolo (com cache). */
 async function loadReg(force = false) {
-  if (!_cacheReg || force) _cacheReg = await fetchSheet('Registros');
+  if (!_cacheReg || force) _cacheReg = await fetchSheet('registros');
   return _cacheReg;
 }
 
