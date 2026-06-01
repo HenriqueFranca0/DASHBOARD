@@ -13,7 +13,7 @@ const API_URL = 'https://hydraengenharia.com/sistema/api/api.php';
 // ── Mapa de equipes ───────────────────────────
 const EQ = {
   'Equipe Fire':           { key: 'fire',  icon: '🔥', tag: 'tag-fire',  color: 'var(--fire)'  },
-  'Equipe Bilingada':      { key: 'bili',  icon: '🌐', tag: 'tag-bili',  color: 'var(--bili)'  },
+  'Equipe Bilingada':      { key: 'bili',  icon: '🔔', tag: 'tag-bili',  color: 'var(--bili)'  },
   'Equipe Supapo':         { key: 'supa',  icon: '⚡', tag: 'tag-supa',  color: 'var(--supa)'  },
   'Equipe de Arquitetura': { key: 'arqui', icon: '📐', tag: 'tag-arqui', color: 'var(--arqui)' },
 };
