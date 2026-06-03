@@ -8,7 +8,7 @@
 // Aponte para o caminho onde o api.php foi enviado no UOL Host.
 // Se o arquivo estiver na raiz do site: '/api.php'
 // Se estiver numa pasta /api/: '/api/api.php'
-const API_URL = 'https://hydraengenharia.com/sistema/api/api.php';
+const API_URL = '/sistema/api/api.php';
 
 // ── Mapa de equipes ───────────────────────────
 const EQ = {
@@ -19,7 +19,7 @@ const EQ = {
 };
 
 // ── Lista de parceiros ────────────────────────
-const PARCEIROS = [
+let PARCEIROS = [
   'PROJETOS ROSSANO','PROJETOS GALVÃO','PROJETOS ROCHA','PROJETOS CALIXTO',
   'PROJETOS FHILIPE EXBRAS','PROJETOS HYGGOR','PROJETOS JORDÃO','PROJETOS BARTOLOMEU',
   'PROJETOS ANTONIO EXBRAS','PROJETOS VALBERTO EXTIMBAS','PROJETOS CAIO MUNIZ (PATTEO OLINDA)',
@@ -53,6 +53,36 @@ const PARCEIROS = [
   'PROJETOS GLAUCUS (HSM)',
 ];
 
+const PARCEIROS_STORAGE_KEY = 'projflow-parceiros';
+const EMPREGADOS_STORAGE_KEY = 'projflow-empregados';
+let EMPREGADOS = [];
+
+function loadPersistedParceiros() {
+  try {
+    const stored = JSON.parse(localStorage.getItem(PARCEIROS_STORAGE_KEY) || '[]');
+    return Array.isArray(stored) && stored.length ? stored : PARCEIROS;
+  } catch {
+    return PARCEIROS;
+  }
+}
+
+function loadEmpregados() {
+  try {
+    const stored = JSON.parse(localStorage.getItem(EMPREGADOS_STORAGE_KEY) || '[]');
+    return Array.isArray(stored) ? stored : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveParceiros() {
+  localStorage.setItem(PARCEIROS_STORAGE_KEY, JSON.stringify(PARCEIROS));
+}
+
+function saveEmpregados() {
+  localStorage.setItem(EMPREGADOS_STORAGE_KEY, JSON.stringify(EMPREGADOS));
+}
+
 // ── Estado da aplicação ───────────────────────
 let _cacheCad     = null;   // cache da planilha Cadastros
 let _cacheReg     = null;   // cache da planilha Registros
@@ -80,6 +110,18 @@ window.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('parceiro-modal').addEventListener('click', function (e) {
     if (e.target === this) fecharModalParceiros();
   });
+
+  // Fecha os modais de novo parceiro/funcionário ao clicar no backdrop
+  document.getElementById('novo-parceiro-modal').addEventListener('click', function (e) {
+    if (e.target === this) fecharNovoParceiroModal();
+  });
+  document.getElementById('novo-funcionario-modal').addEventListener('click', function (e) {
+    if (e.target === this) fecharNovoFuncionarioModal();
+  });
+
+  PARCEIROS = loadPersistedParceiros();
+  EMPREGADOS = loadEmpregados();
+  renderEmployeeTable();
 
   showLoader(true);
   try {
@@ -120,7 +162,7 @@ function toast(msg, isWarn = false) {
  * @param {string} sheet  Nome da aba ('Cadastros' | 'Registros')
  */
 async function fetchSheet(sheet) {
-  const res = await fetch(`${API_URL}?sheet=${sheet}`, { credentials: 'include' });
+  const res  = await fetch(`${API_URL}?sheet=${sheet}`);
   const data = await res.json();
   return data.map(row => ({
     ...row,
@@ -139,20 +181,19 @@ async function postRow(sheet, rowArray) {
     method:  'POST',
     headers: { 'Content-Type': 'application/json' },
     body:    JSON.stringify({ sheet, row: rowArray }),
-     credentials: 'include'
   });
   if (!res.ok) throw new Error('Erro na gravação: ' + res.status);
 }
 
 /** Retorna os cadastros (com cache). */
 async function loadCad(force = false) {
-  if (!_cacheCad || force) _cacheCad = await fetchSheet('cadastros');
+  if (!_cacheCad || force) _cacheCad = await fetchSheet('Cadastros');
   return _cacheCad;
 }
 
 /** Retorna os registros de protocolo (com cache). */
 async function loadReg(force = false) {
-  if (!_cacheReg || force) _cacheReg = await fetchSheet('registros');
+  if (!_cacheReg || force) _cacheReg = await fetchSheet('Registros');
   return _cacheReg;
 }
 
@@ -220,23 +261,22 @@ function updateClocks() {
 // ════════════════════════════════════════════════
 
 /**
- * Gera o próximo código de projeto no formato YY#### .
- * Ex.: 260001 (ano 2026, sequência 1).
+ * Gera o próximo código de projeto com 4 dígitos sequenciais.
+ * Ex.: 4623, 4624, 4625...
  */
 async function gerarCodigo() {
-  const anoStr = String(new Date().getFullYear()).slice(-2); // '26'
   const cads   = await loadCad();
   let maiorSeq = 0;
 
   cads.forEach(c => {
-    const cod = String(c.codigo || '');
-    if (cod.startsWith(anoStr) && cod.length === 6) {
-      const seq = parseInt(cod.slice(2), 10);
-      if (seq > maiorSeq) maiorSeq = seq;
-    }
+    const seq = parseInt(c.codigo, 10);
+    if (!isNaN(seq) && seq > maiorSeq) maiorSeq = seq;
   });
 
-  return anoStr + String(maiorSeq + 1).padStart(4, '0');
+  // Garante que nunca volta abaixo do último código conhecido
+  if (maiorSeq < 4622) maiorSeq = 4622;
+
+  return String(maiorSeq + 1);
 }
 
 /** Exibe o próximo código gerado no campo de preview. */
@@ -329,11 +369,28 @@ function renderListaParceiros(lista) {
     el.innerHTML = '<div class="parceiro-item-empty">Nenhum parceiro encontrado.</div>';
     return;
   }
-  el.innerHTML = lista.map((nome, i) => `
+  el.innerHTML = lista.map((nome) => `
     <div class="parceiro-item" onclick="selecionarParceiro('${nome.replace(/'/g, "\\'")}')">
       <span class="parceiro-num">${PARCEIROS.indexOf(nome) + 1}</span>
       <span class="parceiro-nome">${nome}</span>
+      <button type="button" class="parceiro-remove" title="Excluir parceiro" onclick="excluirParceiro(event, '${nome.replace(/'/g, "\\'")}')">✕</button>
     </div>`).join('');
+}
+
+function excluirParceiro(event, nome) {
+  if (event && typeof event.stopPropagation === 'function') {
+    event.stopPropagation();
+  }
+  const index = PARCEIROS.indexOf(nome);
+  if (index === -1) return;
+  PARCEIROS.splice(index, 1);
+  saveParceiros();
+  if (parceiroSel === nome) {
+    limparParceiro();
+    selecionarTipo('avulso');
+  }
+  filtrarParceiros(document.getElementById('parceiro-search').value || '');
+  toast('✓ Parceiro apagado com sucesso.');
 }
 
 /** Confirma a seleção de um parceiro. */
@@ -349,6 +406,81 @@ function limparParceiro() {
   parceiroSel = '';
   document.getElementById('parceiro-selecionado').style.display = 'none';
   document.getElementById('parceiro-sel-nome').textContent = '';
+}
+
+function abrirModalNovoParceiro() {
+  document.getElementById('new-partner-name').value = '';
+  document.getElementById('novo-parceiro-modal').classList.add('show');
+  setTimeout(() => document.getElementById('new-partner-name').focus(), 150);
+}
+
+function fecharNovoParceiroModal() {
+  document.getElementById('novo-parceiro-modal').classList.remove('show');
+}
+
+function salvarNovoParceiro() {
+  const nome = document.getElementById('new-partner-name').value.trim();
+  if (!nome) return toast('⚠ Informe o nome do parceiro.', true);
+  if (PARCEIROS.includes(nome)) return toast('⚠ Parceiro já existe.', true);
+
+  PARCEIROS.unshift(nome);
+  saveParceiros();
+  fecharNovoParceiroModal();
+  toast('✓ Parceiro cadastrado com sucesso!');
+}
+
+function abrirModalNovoFuncionario() {
+  document.getElementById('new-employee-name').value = '';
+  document.getElementById('novo-funcionario-modal').classList.add('show');
+  setTimeout(() => document.getElementById('new-employee-name').focus(), 150);
+}
+
+function fecharNovoFuncionarioModal() {
+  document.getElementById('novo-funcionario-modal').classList.remove('show');
+}
+
+function salvarNovoFuncionario() {
+  const nome = document.getElementById('new-employee-name').value.trim();
+  if (!nome) return toast('⚠ Informe o nome do funcionário.', true);
+  if (EMPREGADOS.includes(nome)) return toast('⚠ Funcionário já cadastrado.', true);
+
+  EMPREGADOS.push(nome);
+  saveEmpregados();
+  fecharNovoFuncionarioModal();
+  renderEmployeeTable();
+  toast('✓ Funcionário cadastrado com sucesso!');
+}
+
+function renderEmployeeTable() {
+  const tbody = document.getElementById('employee-tbody');
+  if (!EMPREGADOS.length) {
+    tbody.innerHTML = `
+      <tr><td><span style="color:var(--muted)">Nenhum funcionário cadastrado.</span></td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = EMPREGADOS
+    .map(name => `
+      <tr>
+        <td>${name}</td>
+        <td>
+          <button type="button" class="row-remove" title="Excluir funcionário"
+                  onclick="excluirFuncionario(event, '${name.replace(/'/g, "\\'")}')">✕</button>
+        </td>
+      </tr>`)
+    .join('');
+}
+
+function excluirFuncionario(event, nome) {
+  if (event && typeof event.stopPropagation === 'function') {
+    event.stopPropagation();
+  }
+  const index = EMPREGADOS.indexOf(nome);
+  if (index === -1) return;
+  EMPREGADOS.splice(index, 1);
+  saveEmpregados();
+  renderEmployeeTable();
+  toast('✓ Funcionário apagado com sucesso.');
 }
 
 
@@ -384,7 +516,7 @@ async function salvarCadastro() {
   showLoader(true);
   try {
     const codigo   = await gerarCodigo();
-    const idUnico  = Date.now();
+    const idUnico  = Number(codigo);  // usa o próprio código como id
     const dataHoje = nowISO();
     const anoAtual = new Date().getFullYear();
 
@@ -482,6 +614,8 @@ async function selecionarCad(id) {
   document.getElementById('proto-modal-name').textContent = cad.razao;
   document.getElementById('proto-modal-code').textContent = `#${cad.codigo || '—'} · ${cad.equipe}`;
   document.getElementById('r-protocolo').value = '';
+  document.getElementById('div-campo-protocolo').style.display = 'none';
+  document.getElementById('btn-confirmar-protocolo').style.display = 'none';
 
   // Abre o modal
   document.getElementById('proto-modal').classList.add('show');
@@ -503,7 +637,10 @@ async function salvarRegistro() {
 
   showLoader(true);
   try {
-    const idUnico  = Date.now();
+    // Gera id sequencial baseado no maior id existente nos registros
+    const regs    = await loadReg();
+    const maiorId = regs.reduce((max, r) => Math.max(max, Number(r.id) || 0), 0);
+    const idUnico = maiorId + 1;
     const dataHoje = nowISO();
 
     // Colunas Sheets: id | cadId | protocolo | dataReg
@@ -525,7 +662,6 @@ async function salvarRegistro() {
     showLoader(false);
   }
 }
-
 
 // ════════════════════════════════════════════════
 // RELATÓRIO
@@ -694,4 +830,50 @@ function renderRank(containerId, entries, fillCls, color) {
         </div>
       </div>`)
     .join('');
+}
+
+// ── Ações do Modal de Protocolo ─────────────────
+
+function exibirCampoProtocolo() {
+  document.getElementById('div-campo-protocolo').style.display = 'block';
+  document.getElementById('btn-confirmar-protocolo').style.display = 'inline-flex';
+  document.getElementById('r-protocolo').focus();
+}
+
+function cancelarRegistro() {
+  selectedCadId = null;
+  document.getElementById('proto-modal').classList.remove('show');
+  document.getElementById('div-campo-protocolo').style.display = 'none';
+  document.getElementById('btn-confirmar-protocolo').style.display = 'none';
+}
+
+async function salvarComoConcluido() {
+  if (!selectedCadId) return toast('⚠ Selecione um cadastro.', true);
+  await enviarRegistroParaPlanilha("CONCLUÍDO (ISENTO)");
+}
+
+async function salvarRegistro() {
+  const protocolo = document.getElementById('r-protocolo').value.trim();
+  if (!protocolo) return toast('⚠ Informe o número do protocolo.', true);
+  await enviarRegistroParaPlanilha(protocolo);
+}
+
+// Garante que a função de envio exista (se não estiver definida no seu código)
+async function enviarRegistroParaPlanilha(textoProtocolo) {
+  showLoader(true);
+  try {
+    const idUnico = Date.now();
+    const dataHoje = new Date().toISOString().split('T')[0];
+    
+    await postRow('Registros', [idUnico, selectedCadId, textoProtocolo, dataHoje]);
+    
+    document.getElementById('proto-modal').classList.remove('show');
+    selectedCadId = null;
+    await buscarCadastro();
+    toast('✓ Registro salvo com sucesso!');
+  } catch (e) {
+    toast('⚠ Erro ao salvar registro.', true);
+  } finally {
+    showLoader(false);
+  }
 }
