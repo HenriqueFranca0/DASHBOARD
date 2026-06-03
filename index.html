@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ProjFlow</title>
+  <title>Controle de código</title>
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
   <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet">
@@ -34,13 +35,7 @@
         <span class="ni-icon">📊</span> Visualizações
       </div>
     </nav>
-    
-<div style="padding: 0 12px; margin-top: 10px;">
-        <div class="nav-item" onclick="fazerLogout()" style="color: #ef4444;">
-          Sair
-        </div>
-      </div>
-    
+
     <div style="margin: 20px 12px 0;">
       <div class="stats-mini">
         <div class="sm-label">Total cadastros</div>
@@ -78,7 +73,7 @@
                 <span class="ecn">Equipe Fire</span>
               </div>
               <div class="eq-chip-btn" onclick="selEquipe('Equipe Bilingada', 'bili', this)">
-                <span class="eci">🌐</span>
+                <span class="eci">🔔</span>
                 <span class="ecn">Equipe Bilingada</span>
               </div>
               <div class="eq-chip-btn" onclick="selEquipe('Equipe Supapo', 'supa', this)">
@@ -109,7 +104,7 @@
               <button class="tipo-btn tipo-btn-parceiro" id="btn-tipo-parceiro"
                       onclick="abrirModalParceiros()">
                 <span class="tipo-icon">🤝</span>
-                <span class="tipo-label">Com Parceiro</span>
+                <span class="tipo-label">Parceiros</span>
                 <span class="tipo-desc">Selecionar da lista</span>
               </button>
             </div>
@@ -168,7 +163,7 @@
             <select id="r-filter-eq" onchange="buscarCadastro()">
               <option value="">Todas as equipes</option>
               <option value="Equipe Fire">🔥 Equipe Fire</option>
-              <option value="Equipe Bilingada">🌐 Equipe Bilingada</option>
+              <option value="Equipe Bilingada">🔔 Equipe Bilingada</option>
               <option value="Equipe Supapo">⚡ Equipe Supapo</option>
               <option value="Equipe de Arquitetura">📐 Equipe de Arquitetura</option>
             </select>
@@ -203,7 +198,7 @@
           <select id="f-eq" onchange="renderRelatorio()">
             <option value="">Todas</option>
             <option value="Equipe Fire">🔥 Fire</option>
-            <option value="Equipe Bilingada">🌐 Bilingada</option>
+            <option value="Equipe Bilingada">🔔 Bilingada</option>
             <option value="Equipe Supapo">⚡ Supapo</option>
             <option value="Equipe de Arquitetura">📐 Arquitetura</option>
           </select>
@@ -304,37 +299,47 @@
 
 <!-- ══ MODAL DE PROTOCOLO ════════════════════ -->
 <div class="proto-modal" id="proto-modal">
-  <div class="proto-modal-box">
-    <div class="proto-modal-header">
-      <div>
-        <div class="proto-modal-label">Registrar protocolo</div>
-        <div class="proto-modal-name" id="proto-modal-name">—</div>
-        <div class="proto-modal-code" id="proto-modal-code">—</div>
-      </div>
-      <button class="proto-modal-close" onclick="cancelarRegistro()">✕</button>
-    </div>
-
-    <div class="proto-modal-body">
-      <div class="field">
-        <label>Número do protocolo</label>
-        <input id="r-protocolo" type="text" placeholder="Ex: 2320050225766"
-               oninput="this.value = this.value.replace(/\D/g,'')"
-               onkeydown="if(event.key==='Enter') salvarRegistro()">
-      </div>
-      <div class="field" style="margin-top: 14px;">
-        <label>Data de entrada (automática)</label>
-        <div class="auto-date">
-          <div class="pulse"></div>
-          <span id="r-date-display">—</span>
+    <div class="proto-modal-box">
+        <div class="proto-modal-header">
+            <div>
+                <div class="proto-modal-label">Atualizar status do projeto</div>
+                <div class="proto-modal-name" id="proto-modal-name"></div>
+                <div class="proto-modal-code" id="proto-modal-code"></div>
+            </div>
+            <button class="proto-modal-close" onclick="cancelarRegistro()">✕</button>
         </div>
-      </div>
-    </div>
 
-    <div class="proto-modal-footer">
-      <button class="btn btn-ghost" onclick="cancelarRegistro()">Cancelar</button>
-      <button class="btn btn-primary" onclick="salvarRegistro()">📌 Confirmar registro</button>
+        <div class="proto-modal-body">
+            <div id="proto-initial-actions" style="display: flex; gap: 12px; margin-bottom: 14px;">
+                <button type="button" class="btn btn-primary" onclick="exibirCampoProtocolo()"style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                     Registrar Protocolo
+                </button>
+                <button type="button" class="btn btn-ghost" onclick="salvarComoConcluido()" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; border-color: var(--green); color: #fff; background-color: rgba(40, 167, 69, 0.1);">
+                     Concluir
+                </button>
+            </div>
+
+            <div id="div-campo-protocolo" class="field" style="display: none; margin-bottom: 14px;">
+                <label>Número do protocolo</label>
+                <input id="r-protocolo" type="text" placeholder="Ex: 2320050225766"
+                       oninput="this.value = this.value.replace(/\D/g,'')"
+                       onkeydown="if(event.key==='Enter') salvarRegistro()">
+            </div>
+
+            <div class="field">
+                <label>Data de entrada (automática)</label>
+                <div class="auto-date">
+                    <div class="pulse"></div>
+                    <span id="r-date-display"></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="proto-modal-footer">
+            <button class="btn btn-ghost" onclick="cancelarRegistro()">Cancelar</button>
+            <button id="btn-confirmar-protocolo" class="btn btn-primary" onclick="salvarRegistro()" style="display: none;">📌 Protocolar projeto</button>
+        </div>
     </div>
-  </div>
 </div>
 
 <!-- ══ MODAL DE PARCEIROS ════════════════════ -->
@@ -352,6 +357,52 @@
              oninput="filtrarParceiros(this.value)">
     </div>
     <div class="parceiro-modal-list" id="parceiro-lista"></div>
+  </div>
+</div>
+
+<!-- ══ MODAL DE NOVO PARCEIRO ════════════════════ -->
+<div class="proto-modal" id="novo-parceiro-modal">
+  <div class="proto-modal-box">
+    <div class="proto-modal-header">
+      <div>
+        <div class="proto-modal-label">Cadastrar parceiro</div>
+        <div class="proto-modal-name">Adicionar novo parceiro</div>
+      </div>
+      <button type="button" class="proto-modal-close" onclick="fecharNovoParceiroModal()">✕</button>
+    </div>
+    <div class="proto-modal-body">
+      <div class="field">
+        <label>Nome do parceiro</label>
+        <input id="new-partner-name" type="text" placeholder="Ex: PROJETOS NOVO" autocomplete="off">
+      </div>
+    </div>
+    <div class="proto-modal-footer">
+      <button type="button" class="btn btn-ghost" onclick="fecharNovoParceiroModal()">Cancelar</button>
+      <button type="button" class="btn btn-primary" onclick="salvarNovoParceiro()">Salvar parceiro</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL DE NOVO FUNCIONÁRIO ════════════════════ -->
+<div class="proto-modal" id="novo-funcionario-modal">
+  <div class="proto-modal-box">
+    <div class="proto-modal-header">
+      <div>
+        <div class="proto-modal-label">Cadastrar funcionário</div>
+        <div class="proto-modal-name">Adicionar novo funcionário</div>
+      </div>
+      <button type="button" class="proto-modal-close" onclick="fecharNovoFuncionarioModal()">✕</button>
+    </div>
+    <div class="proto-modal-body">
+      <div class="field">
+        <label>Nome do funcionário</label>
+        <input id="new-employee-name" type="text" placeholder="Ex: João Silva" autocomplete="off">
+      </div>
+    </div>
+    <div class="proto-modal-footer">
+      <button type="button" class="btn btn-ghost" onclick="fecharNovoFuncionarioModal()">Cancelar</button>
+      <button type="button" class="btn btn-primary" onclick="salvarNovoFuncionario()">Salvar funcionário</button>
+    </div>
   </div>
 </div>
 
